@@ -3,7 +3,7 @@
 
 **Report Version:** 1.0  
 **Assessment Date:** July 2025  
-**Repository:** https://github.com/Dev-Abiox/emergent_fullstack.git  
+**Repository:** https://github.com/Dev-Abiox/clinomic-prod.git  
 
 ---
 

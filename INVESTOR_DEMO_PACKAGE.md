@@ -251,7 +251,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - Sales: sales@clinomic.io  
 - Support: support@clinomic.io
 
-**Repository**: https://github.com/Dev-Abiox/emergent_fullstack
+**Repository**: https://github.com/Dev-Abiox/clinomic-prod
 
 ---
 

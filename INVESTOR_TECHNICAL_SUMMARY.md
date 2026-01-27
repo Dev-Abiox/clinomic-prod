@@ -318,7 +318,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ## Contact & Support
 
 **Technical Lead:** Clinomic Engineering Team  
-**Repository:** https://github.com/Dev-Abiox/emergent_fullstack.git  
+**Repository:** https://github.com/Dev-Abiox/clinomic-prod.git  
 **Documentation:** See `/docs` directory  
 
 ---

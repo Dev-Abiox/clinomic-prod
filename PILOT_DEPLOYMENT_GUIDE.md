@@ -37,8 +37,8 @@ This guide provides step-by-step instructions for deploying the Clinomic B12 Scr
 ### Step 1: Clone Repository
 
 ```bash
-git clone https://github.com/Dev-Abiox/emergent_fullstack.git
-cd emergent_fullstack
+git clone https://github.com/Dev-Abiox/clinomic-prod.git
+cd clinomic-prod
 ```
 
 ### Step 2: Generate Secrets
@@ -405,7 +405,7 @@ tar -czf clinomic-diag-$(date +%Y%m%d).tar.gz -C /tmp clinomic-diag
 
 - **Technical Support:** support@clinomic.io
 - **Documentation:** https://docs.clinomic.io
-- **Repository:** https://github.com/Dev-Abiox/emergent_fullstack
+- **Repository:** https://github.com/Dev-Abiox/clinomic-prod
 
 ---
 
