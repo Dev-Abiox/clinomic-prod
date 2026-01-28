@@ -12,6 +12,7 @@ env:
   VPS_HOST: 66.116.225.67
   VPS_USER: deploy
   DEPLOY_PATH: /opt/clinomic
+  HEALTH_URL: https://clinomiclabs.com/api/health/ready
 
 jobs:
   build:
@@ -38,14 +39,16 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/dev-abiox/production-ready/backend:latest
+          tags: |
+            ghcr.io/dev-abiox/production-ready/backend:latest
 
       - name: Build & Push Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ghcr.io/dev-abiox/production-ready/frontend:latest
+          tags: |
+            ghcr.io/dev-abiox/production-ready/frontend:latest
           build-args: |
             REACT_APP_BACKEND_URL=https://clinomiclabs.com
 
@@ -63,12 +66,9 @@ jobs:
 
       - name: Deploy to VPS
         run: |
-          ssh -o HostKeyAlgorithms=+ssh-rsa \
-              -o PubkeyAcceptedAlgorithms=+ssh-rsa \
-              -i ~/.ssh/deploy_key \
-              ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << 'EOF'
-
+          ssh -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << 'EOF'
           set -e
+
           cd /opt/clinomic
 
           echo "Logging into GHCR..."
@@ -78,23 +78,30 @@ jobs:
           docker pull ghcr.io/dev-abiox/production-ready/backend:latest
           docker pull ghcr.io/dev-abiox/production-ready/frontend:latest
 
-          echo "Restarting containers..."
+          echo "Restarting stack..."
           docker compose -f docker-compose.prod.yml down
           docker compose -f docker-compose.prod.yml up -d
 
-          echo "Waiting for backend to become healthy..."
+          echo "Waiting for backend health..."
           for i in {1..30}; do
             if curl -sf http://127.0.0.1:8001/api/health/ready > /dev/null; then
-              echo "Backend is healthy."
+              echo "Backend healthy."
               break
             fi
-            echo "Waiting... ($i/30)"
-            sleep 2
+            echo "Waiting for backend... ($i/30)"
+            sleep 3
           done
 
-          echo "Verifying public HTTPS endpoint..."
-          curl -sf https://clinomiclabs.com/api/health/ready
+          echo "Checking public endpoint..."
+          for i in {1..15}; do
+            if curl -sf https://clinomiclabs.com/api/health/ready > /dev/null; then
+              echo "Public health OK."
+              exit 0
+            fi
+            echo "Retry public check... ($i/15)"
+            sleep 5
+          done
 
-          echo "Deployment complete."
-
+          echo "Deployment failed: health never became ready"
+          exit 1
           EOF
