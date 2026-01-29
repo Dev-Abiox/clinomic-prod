@@ -50,7 +50,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           
           # Validate key format
-          ssh-keygen -l -f ~/.ssh/deploy_key || (echo "Invalid SSH key format" && exit 1)
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1 || (echo "ERROR: Invalid SSH private key format. Please verify VPS_SSH_PRIVATE_KEY secret contains a valid OpenSSH private key." && exit 1)
           ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
           
           cat > ~/.ssh/config << EOF
