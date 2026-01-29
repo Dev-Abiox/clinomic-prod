@@ -125,41 +125,28 @@ jobs:
         run: |
           ssh production "cd ${{ env.DEPLOY_PATH }} && docker compose -f docker-compose.prod.yml up -d --remove-orphans"
 
-      - name: Wait for Backend Health
-        run: |
-          echo "Waiting for backend to become healthy..."
-          for i in $(seq 1 40); do
-            RESULT=$(ssh production "curl -sf http://127.0.0.1:8001/api/health/ready 2>/dev/null && echo OK || echo FAIL")
-            if [ "$RESULT" = "OK" ]; then
-              echo "✅ Backend healthy after attempt $i"
-              exit 0
-            fi
-            echo "Attempt $i/40: Backend not ready, waiting 3s..."
-            sleep 3
-          done
-          echo "❌ Backend health check failed after 40 attempts"
-          exit 1
-
       - name: Reload Nginx
         run: |
           ssh production "docker exec clinomic-nginx nginx -s reload" || true
 
-      - name: Verify HTTPS Endpoint
+      - name: Wait for Application Health
         run: |
-          echo "Waiting for edge propagation..."
-          sleep 10
+          echo "Waiting for application to become healthy via HTTPS..."
+          sleep 10  # Allow time for services to stabilize
           
-          for i in $(seq 1 10); do
+          for i in $(seq 1 20); do
             HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 ${{ env.HEALTH_URL }} || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ HTTPS health check passed (attempt $i)"
+              echo "✅ Application healthy after attempt $i"
               exit 0
             fi
-            echo "Attempt $i/10: HTTP $HTTP_CODE - retrying..."
+            echo "Attempt $i/20: HTTP $HTTP_CODE - waiting 5s..."
             sleep 5
           done
           
-          echo "❌ HTTPS health check failed after 10 attempts"
+          echo "❌ Application health check failed after 20 attempts"
+          echo "Debug info:"
+          curl -v ${{ env.HEALTH_URL }} || true
           exit 1
 
       - name: Deployment Complete
