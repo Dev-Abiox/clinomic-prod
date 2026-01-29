@@ -42,8 +42,15 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          
+          # Use the private key from secrets (preserve exact formatting)
+          cat > ~/.ssh/deploy_key << 'EOF'
+          ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          EOF
           chmod 600 ~/.ssh/deploy_key
+          
+          # Validate key format
+          ssh-keygen -l -f ~/.ssh/deploy_key || (echo "Invalid SSH key format" && exit 1)
           ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
           
           cat > ~/.ssh/config << EOF
