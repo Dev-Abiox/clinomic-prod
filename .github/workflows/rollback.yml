@@ -118,7 +118,7 @@ jobs:
             
             echo ""
             echo "Restarting services..."
-            sudo docker-compose -f docker-compose.prod.yml up -d --force-recreate backend frontend
+            docker-compose -f docker-compose.prod.yml up -d --force-recreate backend frontend
             
             echo ""
             echo "Waiting for health check..."
