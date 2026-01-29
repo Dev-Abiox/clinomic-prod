@@ -73,32 +73,33 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # Decode private key from base64
-          echo "${{ secrets.VPS_SSH_PRIVATE_KEY_B64 }}" | base64 -d > ~/.ssh/deploy_key
+          # Use the private key from secrets
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           
-          # Scan host keys (try modern algorithms first, fall back to rsa)
-          ssh-keyscan -t ed25519,ecdsa,rsa -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-          chmod 644 ~/.ssh/known_hosts
+          # Scan host keys
+          ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
           
-          # Create SSH config with algorithm compatibility
+          # Create SSH config
           cat > ~/.ssh/config << EOF
           Host production
             HostName ${{ env.VPS_HOST }}
             User ${{ env.VPS_USER }}
             IdentityFile ~/.ssh/deploy_key
-            IdentitiesOnly yes
             StrictHostKeyChecking accept-new
-            HostKeyAlgorithms +ssh-rsa
-            PubkeyAcceptedAlgorithms +ssh-rsa
             ServerAliveInterval 60
-            ServerAliveCountMax 3
           EOF
           chmod 600 ~/.ssh/config
 
       - name: Test SSH Connection
         run: |
           ssh production "echo 'SSH connection successful'"
+
+      - name: Sync Configuration Files
+        run: |
+          # Sync docker-compose and nginx config to VPS
+          scp docker-compose.prod.yml production:${{ env.DEPLOY_PATH }}/
+          scp -r nginx production:${{ env.DEPLOY_PATH }}/
 
       - name: Docker Login on VPS
         env:
@@ -113,7 +114,7 @@ jobs:
 
       - name: Restart Stack
         run: |
-          ssh production "cd ${{ env.DEPLOY_PATH }} && docker compose -f docker-compose.prod.yml up -d --remove-orphans"
+          ssh production "cd ${{ env.DEPLOY_PATH }} && sudo docker-compose -f docker-compose.prod.yml up -d --remove-orphans"
 
       - name: Wait for Backend Health
         run: |
