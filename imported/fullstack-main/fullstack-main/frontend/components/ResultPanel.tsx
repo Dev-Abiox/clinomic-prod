@@ -20,15 +20,19 @@ interface Props {
 
 const ResultPanel: React.FC<Props> = ({ result }) => {
   // -------------------------------
-  // SINGLE SOURCE OF TRUTH
+  // SINGLE SOURCE OF TRUTH: Use backend's label (argmax of probabilities)
   // -------------------------------
   const pN = result.probabilities.normal;
   const pB = result.probabilities.borderline;
   const pD = result.probabilities.deficient;
 
-  let finalLabel: "Normal" | "Borderline" | "Deficient" = "Normal";
-  if (pD >= pN && pD >= pB) finalLabel = "Deficient";
-  else if (pB >= pN && pB >= pD) finalLabel = "Borderline";
+  // Map backend label (uppercase) to display format
+  const labelMap: Record<string, "Normal" | "Borderline" | "Deficient"> = {
+    NORMAL: "Normal",
+    BORDERLINE: "Borderline",
+    DEFICIENT: "Deficient",
+  };
+  const finalLabel = labelMap[result.label] ?? "Normal";
 
   // -------------------------------
   // BADGE
