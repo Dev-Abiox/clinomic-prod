@@ -2,6 +2,7 @@ import joblib
 import json
 import pandas as pd
 
+
 class B12ClinicalEngine:
     def __init__(self, model_dir="app/b12_clinical_engine_v1.0"):
         self.stage1 = joblib.load(f"{model_dir}/stage1_normal_vs_abnormal.pkl")
@@ -11,8 +12,8 @@ class B12ClinicalEngine:
             self.thresholds = json.load(f)
 
     def add_indices(self, row):
-        row["Mentzer"] = row["MCV"] / row["RBC"]
-        row["RDW_MCV"] = row["RDW"] / row["MCV"]
+        row["Mentzer"] = row["MCV"] / row["RBC"] if row["RBC"] > 0 else 0
+        row["RDW_MCV"] = row["RDW"] / row["MCV"] if row["MCV"] > 0 else 0
         row["Pancytopenia"] = int(
             (row["Hb"] < 12) and (row["WBC"] < 4) and (row["Platelets"] < 150)
         )
@@ -41,48 +42,37 @@ class B12ClinicalEngine:
         return score, rules
 
     def predict(self, cbc_dict):
-        # 1. Prepare raw input dataframe for Model
-        # Map frontend keys to model keys if necessary.
-        # Based on inspection, we need: Age, Sex, Hb, RBC, HCT, MCV, MCH, MCHC, RDW, WBC, Platelets, Neutrophils, Lymphocytes
-        
-        # Ensure 'Sex' is numeric if model expects it (usually converted)
-        # However, CatBoost/XGBoost handles categories if specified.
-        # Let's trust the input dictionary matches keys now that we fixed api.ts
-        
-        # The model likely expects 'Sex' as 0/1 or Category. 
-        # Inspect output showed 'Sex', presumably string 'M'/'F' or encoded.
-        # Assuming model handles 'M'/'F' or we need to encode.
-        # Let's try passing as is first, but ensure all columns are present.
-
         df = pd.DataFrame([cbc_dict])
-        
-        # Reorder/Select columns strictly to avoid "extra column" errors or "missing column" errors
+
         expected_cols = [
-            'Age', 'Sex', 'Hb', 'RBC', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW', 
+            'Age', 'Sex', 'Hb', 'RBC', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW',
             'WBC', 'Platelets', 'Neutrophils', 'Lymphocytes'
         ]
-        
-        # Ensure all columns exist (fill 0 or None if missing, though we fixed validation)
+
+        # Ensure all expected columns exist
         for col in expected_cols:
             if col not in df.columns:
-                df[col] = 0 # Fallback
-                
-        df = df[expected_cols] # Enforce order and selection
+                df[col] = 0
 
-        # Fix: Map Sex to numeric if model expects it (CatBoost error confirmed this)
-        # Assuming M=1, F=0 based on common practice. If model performs poorly, we swap.
+        df = df[expected_cols]
+
+        # Encode Sex if needed
         if df['Sex'].dtype == 'object':
             df['Sex'] = df['Sex'].map({'M': 1, 'F': 0, 'm': 1, 'f': 0})
-            df['Sex'] = df['Sex'].fillna(0) # Separate fillna to Ensure processing
-        
-        p_abnormal = self.stage1.predict_proba(df)[0][1]
-        p_def = self.stage2.predict_proba(df)[0][1] if p_abnormal > 0.3 else 0.05
+            df['Sex'] = df['Sex'].fillna(0)
 
-        row = self.add_indices(cbc_dict)
+        # --- MODEL PREDICTIONS ---
+        p_abnormal = self.stage1.predict_proba(df)[0][1]
+        p_def = self.stage2.predict_proba(df)[0][1]
+
+        # --- RULES (for explainability only) ---
+        row = self.add_indices(dict(cbc_dict))
         rule_score, rules = self.apply_rules(row)
 
-        p_def_final = min(1, max(0, p_def + self.thresholds["rule_weight"] * rule_score))
+        # Do NOT mix rules into probability
+        p_def_final = p_def
 
+        # --- CLASSIFICATION ---
         if p_def_final >= self.thresholds["deficient_threshold"]:
             cls = 3; label = "DEFICIENT"
         elif p_def_final >= self.thresholds["borderline_threshold"]:
@@ -90,19 +80,44 @@ class B12ClinicalEngine:
         else:
             cls = 1; label = "NORMAL"
 
+        # --- CORRECT PROBABILITY MATH ---
+        p_normal = 1 - p_abnormal
+        p_borderline = p_abnormal * (1 - p_def_final)
+        p_deficient = p_abnormal * p_def_final
+
+        total = p_normal + p_borderline + p_deficient
+
+        if total == 0:
+            p_normal, p_borderline, p_deficient = 1, 0, 0
+        else:
+            p_normal /= total
+            p_borderline /= total
+            p_deficient /= total
+
         return {
             "riskClass": cls,
             "label": label,
             "probabilities": {
-                "normal": round(1 - max(p_abnormal, p_def_final), 3),
-                "borderline": round(max(0, p_abnormal - p_def_final), 3),
-                "deficient": round(p_def_final, 3)
+                "normal": round(float(p_normal), 3),
+                "borderline": round(float(p_borderline), 3),
+                "deficient": round(float(p_deficient), 3)
             },
             "rulesFired": rules,
             "modelVersion": "B12-Clinical-Engine-v1.0",
             "indices": {
-                "mentzer": round(cbc_dict.get("MCV", 0) / cbc_dict.get("RBC", 1) if cbc_dict.get("RBC", 0) > 0 else 0, 2),
-                "greenKing": round((pow(cbc_dict.get("MCV", 0), 2) * cbc_dict.get("RDW", 0)) / (100 * cbc_dict.get("Hb", 1)) if cbc_dict.get("Hb", 0) > 0 else 0, 2),
-                "nlr": round((cbc_dict.get("Neutrophils") or 0) / (cbc_dict.get("Lymphocytes") or 1) if (cbc_dict.get("Lymphocytes") or 0) > 0 else 0, 2)
+                "mentzer": round(
+                    cbc_dict.get("MCV", 0) / cbc_dict.get("RBC", 1)
+                    if cbc_dict.get("RBC", 0) > 0 else 0, 2
+                ),
+                "greenKing": round(
+                    (pow(cbc_dict.get("MCV", 0), 2) * cbc_dict.get("RDW", 0)) /
+                    (100 * cbc_dict.get("Hb", 1))
+                    if cbc_dict.get("Hb", 0) > 0 else 0, 2
+                ),
+                "nlr": round(
+                    (cbc_dict.get("Neutrophils") or 0) /
+                    (cbc_dict.get("Lymphocytes") or 1)
+                    if (cbc_dict.get("Lymphocytes") or 0) > 0 else 0, 2
+                )
             }
         }
