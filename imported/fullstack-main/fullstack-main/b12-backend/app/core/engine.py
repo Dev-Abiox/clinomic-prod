@@ -95,29 +95,39 @@ class B12ClinicalEngine:
             p_deficient /= total
 
         return {
-            "riskClass": cls,
-            "label": label,
-            "probabilities": {
-                "normal": round(float(p_normal), 3),
-                "borderline": round(float(p_borderline), 3),
-                "deficient": round(float(p_deficient), 3)
-            },
-            "rulesFired": rules,
-            "modelVersion": "B12-Clinical-Engine-v1.0",
-            "indices": {
-                "mentzer": round(
-                    cbc_dict.get("MCV", 0) / cbc_dict.get("RBC", 1)
-                    if cbc_dict.get("RBC", 0) > 0 else 0, 2
-                ),
-                "greenKing": round(
-                    (pow(cbc_dict.get("MCV", 0), 2) * cbc_dict.get("RDW", 0)) /
-                    (100 * cbc_dict.get("Hb", 1))
-                    if cbc_dict.get("Hb", 0) > 0 else 0, 2
-                ),
-                "nlr": round(
-                    (cbc_dict.get("Neutrophils") or 0) /
-                    (cbc_dict.get("Lymphocytes") or 1)
-                    if (cbc_dict.get("Lymphocytes") or 0) > 0 else 0, 2
-                )
-            }
-        }
+                    "riskClass": cls,
+                    "label": label,
+
+                    "debug": {
+                        "p_abnormal_raw": float(p_abnormal),
+                        "p_def_raw": float(p_def),
+                        "input_df": df.iloc[0].to_dict()
+                    },
+
+                    "probabilities": {
+                        "normal": round(float(p_normal), 3),
+                        "borderline": round(float(p_borderline), 3),
+                        "deficient": round(float(p_deficient), 3)
+                    },
+
+                    "rulesFired": rules,
+                    "modelVersion": "B12-Clinical-Engine-v1.0",
+
+                    "indices": {
+                        "mentzer": round(
+                            cbc_dict.get("MCV", 0) / cbc_dict.get("RBC", 1)
+                            if cbc_dict.get("RBC", 0) > 0 else 0, 2
+                        ),
+                        "greenKing": round(
+                            (pow(cbc_dict.get("MCV", 0), 2) * cbc_dict.get("RDW", 0)) /
+                            (100 * cbc_dict.get("Hb", 1))
+                            if cbc_dict.get("Hb", 0) > 0 else 0, 2
+                        ),
+                        "nlr": round(
+                            (cbc_dict.get("Neutrophils") or 0) /
+                            (cbc_dict.get("Lymphocytes") or 1)
+                            if (cbc_dict.get("Lymphocytes") or 0) > 0 else 0, 2
+                        )
+                    }
+                }
+
