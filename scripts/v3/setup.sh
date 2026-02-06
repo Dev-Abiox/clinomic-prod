@@ -1,13 +1,13 @@
 #!/bin/bash
 # Initial Setup for Clinomic v3 Platform
-# Usage: ./scripts/setup-v3.sh
+# Usage: ./scripts/v3/setup.sh
 #
 # Sets up the complete v3 environment
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 cd "$PROJECT_ROOT"
 
@@ -172,13 +172,13 @@ echo ""
 echo "To start the platform:"
 echo ""
 echo "  Development (with hot reload):"
-echo "    ./scripts/start-v3.sh dev"
+echo "    ./scripts/v3/start.sh dev"
 echo ""
 echo "  Production:"
-echo "    ./scripts/start-v3.sh prod"
+echo "    ./scripts/v3/start.sh prod"
 echo ""
 echo "  Full stack (with frontend):"
-echo "    ./scripts/start-v3.sh full"
+echo "    ./scripts/v3/start.sh full"
 echo ""
 echo "URLs:"
 echo "  Backend API: http://localhost:8000"

@@ -1,11 +1,11 @@
 #!/bin/bash
 # Stop Clinomic v3 Platform
-# Usage: ./scripts/stop-v3.sh
+# Usage: ./scripts/v3/stop.sh
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 cd "$PROJECT_ROOT"
 

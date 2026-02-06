@@ -1,13 +1,13 @@
 #!/bin/bash
 # Start Clinomic v3 Platform (Full Stack)
-# Usage: ./scripts/start-v3.sh [dev|prod]
+# Usage: ./scripts/v3/start.sh [dev|prod]
 #
 # Starts PostgreSQL, Backend v3, and optionally Frontend
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 cd "$PROJECT_ROOT"
 

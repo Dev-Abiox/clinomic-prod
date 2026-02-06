@@ -1,13 +1,13 @@
 #!/bin/bash
 # View logs for Clinomic v3 Platform
-# Usage: ./scripts/logs-v3.sh [service]
+# Usage: ./scripts/v3/logs.sh [service]
 #
 # Services: db, backend_v3, backend_v3_dev, frontend, all
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 cd "$PROJECT_ROOT"
 
