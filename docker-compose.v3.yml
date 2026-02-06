@@ -3,33 +3,36 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
+    restart: always
     environment:
       POSTGRES_DB: clinomic
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_v3_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  backend:
+  backend_v3:
     build:
-      context: .
+      context: ./backend_v3
       dockerfile: Dockerfile
     environment:
       - DEBUG=False
       - APP_ENV=${APP_ENV:-dev}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
       - POSTGRES_DB=clinomic
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY}
       - MASTER_ENCRYPTION_KEY=${MASTER_ENCRYPTION_KEY}
       - AUDIT_SIGNING_KEY=${AUDIT_SIGNING_KEY}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
@@ -39,29 +42,32 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./ml/models:/app/ml/models:ro
+      - ./backend_v3/ml/models:/app/ml/models:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/live"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # For development only
-  dev:
+  # Development service with hot reload
+  backend_v3_dev:
     build:
-      context: .
+      context: ./backend_v3
       dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
     environment:
       - DEBUG=True
       - APP_ENV=dev
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-secret-key-change-me}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-secret-key-change-in-production}
       - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
       - POSTGRES_DB=clinomic
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret-change-in-production}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY:-dev-refresh-secret}
       - MASTER_ENCRYPTION_KEY=${MASTER_ENCRYPTION_KEY}
+      - AUDIT_SIGNING_KEY=${AUDIT_SIGNING_KEY:-dev-audit-key}
       - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
     ports:
       - "8000:8000"
@@ -69,10 +75,39 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - .:/app
-      - ./ml/models:/app/ml/models:ro
+      - ./backend_v3:/app
+      - ./backend_v3/ml/models:/app/ml/models:ro
     profiles:
       - dev
 
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend_v3
+    profiles:
+      - full
+
+  # Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend_v3
+      - frontend
+    profiles:
+      - prod
+
 volumes:
-  postgres_data:
+  postgres_v3_data:
