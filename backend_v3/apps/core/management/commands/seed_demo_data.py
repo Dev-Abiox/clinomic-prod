@@ -130,12 +130,10 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"  Organization exists: {org.name}")
 
-        # Create domain
-        domain_id = deterministic_uuid(DEMO_NAMESPACE, "domain:demo")
-        domain, created = Domain.objects.update_or_create(
-            id=domain_id,
+        # Create domain (uses auto-increment ID, not UUID)
+        domain, created = Domain.objects.get_or_create(
+            domain="demo.localhost",
             defaults={
-                "domain": "demo.localhost",
                 "tenant": org,
                 "is_primary": True,
             },
@@ -143,6 +141,8 @@ class Command(BaseCommand):
 
         if created:
             self.stdout.write(f"  Created domain: {domain.domain}")
+        else:
+            self.stdout.write(f"  Domain exists: {domain.domain}")
 
         return org
 
