@@ -19,11 +19,11 @@ class BaseRepository(Generic[ModelType]):
 
     def get(self, id: UUID) -> Optional[ModelType]:
         statement = select(self.model).where(self.model.id == id).where(self.model.org_id == self.org_id)
-        return self.db.exec(statement).first()
+        return self.db.execute(statement).scalars().first()
 
     def get_all(self, skip: int = 0, limit: int = 100) -> List[ModelType]:
         statement = select(self.model).where(self.model.org_id == self.org_id).offset(skip).limit(limit)
-        return self.db.exec(statement).all()
+        return self.db.execute(statement).scalars().all()
 
     def create(self, obj: ModelType) -> ModelType:
         # FORCE override org_id to ensure safety even if developer passed wrong one

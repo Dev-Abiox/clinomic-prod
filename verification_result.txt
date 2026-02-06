@@ -1,0 +1,10 @@
+{
+  "id": "c6117437-75c5-438e-a582-d3ac31a64bc0",
+  "patient_id": "7b4ec9e4-d8d0-435e-bef6-b65de4daa301",
+  "hemoglobin": 8.5,
+  "mcv": 115.0,
+  "risk_class": 3,
+  "confidence_score": 0.9784,
+  "created_at": "2026-02-06T09:26:40.874411"
+}
+RAW CONFIDENCE: 0.9784
