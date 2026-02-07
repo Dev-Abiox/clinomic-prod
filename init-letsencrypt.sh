@@ -30,6 +30,8 @@ docker compose -f docker-compose.prod.yml run --rm --entrypoint "\
     -keyout '$path/privkey.pem' \
     -out '$path/fullchain.pem' \
     -subj '/CN=localhost'" certbot
+docker compose -f docker-compose.prod.yml run --rm --entrypoint "\
+  cp '$path/fullchain.pem' '$path/chain.pem'" certbot
 echo
 
 
