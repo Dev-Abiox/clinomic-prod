@@ -176,7 +176,7 @@ jobs:
           push: false
           tags: clinomic-frontend:${{ github.sha }}
           build-args: |
-            REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL || 'https://clinomiclabs.com' }}
+            REACT_APP_BACKEND_URL= ${{ secrets.REACT_APP_BACKEND_URL || 'https://clinomiclabs.com' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

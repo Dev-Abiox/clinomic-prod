@@ -113,6 +113,7 @@ jobs:
           # Sync docker-compose, env file, and nginx config to VPS
           scp docker-compose.prod.yml .env.v3 production:${{ env.DEPLOY_PATH }}/
           scp -r nginx production:${{ env.DEPLOY_PATH }}/
+          scp -r backend_v3 production:${{ env.DEPLOY_PATH }}/
           scp init-letsencrypt.sh production:${{ env.DEPLOY_PATH }}/
 
       - name: Initialize SSL Certificates
