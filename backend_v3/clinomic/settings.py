@@ -25,6 +25,8 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 # Multi-Tenant Configuration (django-tenants)
 TENANT_MODEL = 'core.Organization'
 TENANT_DOMAIN_MODEL = 'core.Domain'
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True  # Allow health checks on localhost
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True  # Allow health checks on localhost
 
 SHARED_APPS = [
     'django_tenants',
@@ -186,7 +188,8 @@ if APP_ENV == 'prod':
     X_FRAME_OPTIONS = 'DENY'
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_SSL_REDIRECT = True
+    # Disable internal SSL redirect if behind Nginx (prevent infinite loop)
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
