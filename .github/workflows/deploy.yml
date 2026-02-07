@@ -109,6 +109,11 @@ jobs:
           # Sync docker-compose and nginx config to VPS
           scp docker-compose.prod.yml production:${{ env.DEPLOY_PATH }}/
           scp -r nginx production:${{ env.DEPLOY_PATH }}/
+          scp init-letsencrypt.sh production:${{ env.DEPLOY_PATH }}/
+
+      - name: Initialize SSL Certificates
+        run: |
+          ssh production "cd ${{ env.DEPLOY_PATH }} && if [ ! -f ./data/certbot/conf/live/clinomiclabs.com/fullchain.pem ]; then chmod +x init-letsencrypt.sh && ./init-letsencrypt.sh; fi"
 
       - name: Docker Login on VPS
         env:
