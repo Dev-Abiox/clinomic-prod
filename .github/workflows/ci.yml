@@ -73,6 +73,10 @@ jobs:
           POSTGRES_PASSWORD: postgres
           APP_ENV: ci
           DEMO_USERS_ENABLED: "true"
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          MASTER_ENCRYPTION_KEY: ${{ secrets.MASTER_ENCRYPTION_KEY }}
+          AUDIT_SIGNING_KEY: ${{ secrets.AUDIT_SIGNING_KEY }}
         run: |
           pytest tests/ --cov=. --cov-report=xml --cov-report=html -v || true
 
