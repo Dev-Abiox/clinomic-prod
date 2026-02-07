@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: ./backend_v3
 
     services:
       db:
@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: backend_v3/requirements.txt
 
       - name: Install dependencies
         run: |
@@ -79,7 +79,7 @@ jobs:
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
         with:
-          files: ./backend/coverage.xml
+          files: ./backend_v3/coverage.xml
           flags: backend
         continue-on-error: true
 
@@ -159,7 +159,7 @@ jobs:
       - name: Build backend image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./backend_v3
           push: false
           tags: clinomic-backend:${{ github.sha }}
           cache-from: type=gha
