@@ -60,9 +60,58 @@ export const AuthService = {
   },
 
   getMe: async () => {
+<<<<<<< HEAD
     // Optional: implement /me endpoint in backend if needed
     return { name: "Pilot User" };
   }
+=======
+    const res = await API.get("/auth/me");
+    return res.data;
+  },
+};
+
+export const MFAService = {
+  getStatus: async () => {
+    const res = await API.get("/mfa/status");
+    return res.data;
+  },
+  
+  setup: async (email) => {
+    const res = await API.post("/mfa/setup", { email });
+    return res.data;
+  },
+  
+  verifySetup: async (code) => {
+    const res = await API.post("/mfa/verify-setup", { code });
+    return res.data;
+  },
+  
+  disable: async (code) => {
+    const res = await API.post("/mfa/disable", { code });
+    return res.data;
+  },
+  
+  regenerateBackupCodes: async (code) => {
+    const res = await API.post("/mfa/backup-codes/regenerate", { code });
+    return res.data;
+  },
+};
+
+export const ConsentService = {
+  getStatus: async (patientId) => {
+    try {
+      const res = await API.get(`/screening/consent/status/${patientId}`);
+      return res.data;
+    } catch (e) {
+      return { hasConsent: false };
+    }
+  },
+
+  record: async (patientId, consentData) => {
+    const res = await API.post("/screening/consent/record", consentData);
+    return res.data;
+  },
+>>>>>>> origin/v3_final
 };
 
 export const LisService = {
